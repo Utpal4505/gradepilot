@@ -1,3 +1,8 @@
+// ──────────────────────────────────────────────
+//  GradePilot · dashboard.js
+//  Main dashboard view — 7 sections + simulator mount
+// ──────────────────────────────────────────────
+
 import { getState, setState, resetState, subscribe } from './state.js';
 import {
   calculateSGPA, totalCredits, getRiskSummary, getSubjectRisk,
@@ -12,7 +17,7 @@ export function renderDashboard(container) {
     const { subjects, targetSGPA, studyHoursPerWeek } = state;
 
     if (subjects.length === 0) {
-      container.innerHTML = `<div class="p-8 text-center"><p class="text-gray-500 dark:text-gray-400">No subjects found. Please go back and add subjects.</p></div>`;
+      container.innerHTML = '<div class="p-8 text-center"><p class="text-slate-500 dark:text-slate-400">No subjects found. Please go back and add subjects.</p></div>';
       return;
     }
 
@@ -30,239 +35,215 @@ export function renderDashboard(container) {
     else if (progressRatio >= 85) progressColor = 'bg-amber-500';
 
     const gap = targetSGPA - currentSGPA;
-    const situationText = gap > 0 
-      ? `You need approximately +${gap.toFixed(2)} SGPA to reach your target.`
-      : `Congratulations! You are on track to meet or exceed your target.`;
+    const situationText = gap > 0
+      ? 'You need approximately <strong>+' + gap.toFixed(2) + ' SGPA</strong> to reach your target.'
+      : '\u2705 Congratulations! You are on track to meet or exceed your target.';
 
-    container.innerHTML = `
-      <div class="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 space-y-8 dark:text-gray-100">
-        <!-- Header -->
-        <div class="flex flex-col sm:flex-row justify-between items-center gap-4">
-          <h1 class="text-3xl font-bold text-gray-900 dark:text-white">🚀 Dashboard</h1>
-          <div class="flex gap-3">
-            <button id="btn-edit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md shadow-sm text-sm font-medium transition-colors">
-              Edit Subjects
-            </button>
-            <button id="btn-reset" class="px-4 py-2 bg-white dark:bg-gray-800 text-red-600 border border-red-200 dark:border-red-900 hover:bg-red-50 dark:hover:bg-red-950 rounded-md shadow-sm text-sm font-medium transition-colors">
-              Reset
-            </button>
-          </div>
-        </div>
+    // Build HTML using string concatenation to avoid nested template literal issues
 
-        <!-- Section 1 & 2: Overview & Situation -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div class="col-span-1 lg:col-span-2 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
-            <h2 class="text-lg font-semibold mb-6 flex items-center gap-2">📊 Semester Overview</h2>
-            <div class="flex justify-between items-end mb-2">
-              <div>
-                <p class="text-sm text-gray-500 dark:text-gray-400 font-medium">Expected SGPA</p>
-                <p class="text-4xl font-bold text-gray-900 dark:text-white">${currentSGPA.toFixed(2)}</p>
-              </div>
-              <div class="text-right">
-                <p class="text-sm text-gray-500 dark:text-gray-400 font-medium">Target SGPA</p>
-                <p class="text-4xl font-bold text-gray-900 dark:text-white">${targetSGPA.toFixed(2)}</p>
-              </div>
-            </div>
-            <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-4 mb-4">
-              <div class="${progressColor} h-4 rounded-full transition-all duration-500" style="width: ${progressRatio}%"></div>
-            </div>
-            <div class="flex gap-4 text-sm text-gray-500 dark:text-gray-400">
-              <span class="bg-gray-100 dark:bg-gray-700 px-3 py-1 rounded-full">Credits: ${totCredits}</span>
-              <span class="bg-gray-100 dark:bg-gray-700 px-3 py-1 rounded-full">Subjects: ${subjects.length}</span>
-            </div>
-          </div>
+    // --- Section 1 & 2: Overview + Situation ---
+    let html = '<div class="space-y-8">';
 
-          <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
-            <h2 class="text-lg font-semibold mb-4 flex items-center gap-2">🎯 Your Situation</h2>
-            <p class="text-gray-700 dark:text-gray-300 font-medium mb-4">${situationText}</p>
-            <div class="space-y-3">
-              <div class="flex justify-between items-center bg-rose-50 dark:bg-rose-900/20 px-4 py-2 rounded-lg text-rose-700 dark:text-rose-400">
-                <span>🔴 High Risk</span>
-                <span class="font-bold">${risk.counts.high}</span>
-              </div>
-              <div class="flex justify-between items-center bg-amber-50 dark:bg-amber-900/20 px-4 py-2 rounded-lg text-amber-700 dark:text-amber-400">
-                <span>🟡 Medium Risk</span>
-                <span class="font-bold">${risk.counts.medium}</span>
-              </div>
-              <div class="flex justify-between items-center bg-emerald-50 dark:bg-emerald-900/20 px-4 py-2 rounded-lg text-emerald-700 dark:text-emerald-400">
-                <span>🟢 Safe</span>
-                <span class="font-bold">${risk.counts.low}</span>
-              </div>
-            </div>
-          </div>
-        </div>
+    // Header with buttons
+    html += '<div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">';
+    html += '<h1 class="text-3xl font-bold text-slate-900 dark:text-white flex items-center gap-2">\uD83D\uDE80 Dashboard</h1>';
+    html += '<div class="flex gap-3">';
+    html += '<button id="btn-edit" class="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg font-medium transition-colors text-sm">Edit Subjects</button>';
+    html += '<button id="btn-reset" class="px-4 py-2 bg-white dark:bg-slate-800 text-rose-600 border border-rose-200 dark:border-rose-900 hover:bg-rose-50 dark:hover:bg-rose-950 rounded-lg text-sm font-medium transition-colors">Reset</button>';
+    html += '</div></div>';
 
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <!-- Section 3: Academic Health -->
-          <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
-            <h2 class="text-lg font-semibold mb-6 flex items-center gap-2">🏥 Academic Health</h2>
-            <div class="flex items-center gap-6 mb-6">
-              <div class="relative w-24 h-24 flex items-center justify-center rounded-full border-4 border-gray-100 dark:border-gray-700">
-                <svg class="absolute inset-0 w-full h-full transform -rotate-90">
-                  <circle cx="48" cy="48" r="44" fill="none" stroke="currentColor" stroke-width="8" class="text-gray-200 dark:text-gray-700"></circle>
-                  <circle cx="48" cy="48" r="44" fill="none" stroke="currentColor" stroke-width="8" class="${health.tailwind} transition-all duration-1000" stroke-dasharray="276" stroke-dashoffset="${276 - (276 * health.score) / 100}"></circle>
-                </svg>
-                <div class="text-center">
-                  <span class="text-2xl font-bold block ${health.tailwind}">${health.score}</span>
-                </div>
-              </div>
-              <div>
-                <p class="text-xl font-bold ${health.tailwind}">${health.healthLabel}</p>
-                <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Score out of 100</p>
-              </div>
-            </div>
-            <div class="space-y-3 text-sm">
-              <div>
-                <div class="flex justify-between mb-1 text-gray-600 dark:text-gray-300"><span>Target Proximity</span><span>${health.breakdown.sgpaScore}/40</span></div>
-                <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2"><div class="bg-indigo-500 h-2 rounded-full" style="width: ${(health.breakdown.sgpaScore/40)*100}%"></div></div>
-              </div>
-              <div>
-                <div class="flex justify-between mb-1 text-gray-600 dark:text-gray-300"><span>Risk Control</span><span>${health.breakdown.riskScore}/20</span></div>
-                <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2"><div class="bg-indigo-500 h-2 rounded-full" style="width: ${(health.breakdown.riskScore/20)*100}%"></div></div>
-              </div>
-              <div>
-                <div class="flex justify-between mb-1 text-gray-600 dark:text-gray-300"><span>Improvement Headroom</span><span>${health.breakdown.potentialScore}/20</span></div>
-                <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2"><div class="bg-indigo-500 h-2 rounded-full" style="width: ${(health.breakdown.potentialScore/20)*100}%"></div></div>
-              </div>
-              <div>
-                <div class="flex justify-between mb-1 text-gray-600 dark:text-gray-300"><span>Grade Balance</span><span>${health.breakdown.balanceScore}/20</span></div>
-                <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2"><div class="bg-indigo-500 h-2 rounded-full" style="width: ${(health.breakdown.balanceScore/20)*100}%"></div></div>
-              </div>
-            </div>
-          </div>
+    // Overview + Situation row
+    html += '<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">';
 
-          <!-- Section 5: Best Opportunities -->
-          <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
-            <h2 class="text-lg font-semibold mb-4 flex items-center gap-2">🔥 Best Opportunities</h2>
-            <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
-              ${improvements.recommended.changes.length > 0 
-                ? \`Improving these \${improvements.recommended.changes.length} subjects could get you to \${improvements.recommended.projectedSGPA.toFixed(2)} SGPA.\` 
-                : \`You are already hitting your target! Keep it up.\`}
-            </p>
-            <div class="space-y-3 max-h-64 overflow-y-auto pr-2 custom-scrollbar">
-              ${improvements.opportunities.slice(0, 5).map(opp => `
-                <div class="p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg flex justify-between items-center border border-gray-100 dark:border-gray-700">
-                  <div>
-                    <p class="font-semibold text-gray-900 dark:text-gray-100">${opp.subjectName}</p>
-                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Upgrade ${opp.fromGrade} → ${opp.toGrade}</p>
-                  </div>
-                  <div class="text-right">
-                    <span class="inline-block px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs font-bold rounded">
-                      +${opp.impact.toFixed(2)} SGPA
-                    </span>
-                  </div>
-                </div>
-              `).join('')}
-              ${improvements.opportunities.length === 0 ? '<p class="text-sm text-gray-500">No further upgrades possible.</p>' : ''}
-            </div>
-          </div>
-        </div>
+    // Overview card
+    html += '<div class="col-span-1 lg:col-span-2 card p-6">';
+    html += '<h2 class="text-lg font-semibold mb-6 flex items-center gap-2">\uD83D\uDCCA Semester Overview</h2>';
+    html += '<div class="flex justify-between items-end mb-3">';
+    html += '<div><p class="text-sm text-slate-500 dark:text-slate-400 font-medium">Expected SGPA</p>';
+    html += '<p class="text-4xl font-bold text-slate-900 dark:text-white">' + currentSGPA.toFixed(2) + '</p></div>';
+    html += '<div class="text-right"><p class="text-sm text-slate-500 dark:text-slate-400 font-medium">Target SGPA</p>';
+    html += '<p class="text-4xl font-bold text-slate-900 dark:text-white">' + targetSGPA.toFixed(2) + '</p></div>';
+    html += '</div>';
+    html += '<div class="progress-bar mb-4"><div class="progress-bar-fill animate-progress ' + progressColor + '" style="width:' + progressRatio + '%"></div></div>';
+    html += '<div class="flex gap-4 text-sm text-slate-500 dark:text-slate-400">';
+    html += '<span class="bg-slate-100 dark:bg-slate-700 px-3 py-1 rounded-full">' + totCredits + ' Credits</span>';
+    html += '<span class="bg-slate-100 dark:bg-slate-700 px-3 py-1 rounded-full">' + subjects.length + ' Subjects</span>';
+    html += '</div></div>';
 
-        <!-- Section 4: Subject Cards Grid -->
-        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
-          <h2 class="text-lg font-semibold mb-6 flex items-center gap-2">📚 Subject Priorities</h2>
-          <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-            ${subjects.map(sub => {
-              const riskLevel = getSubjectRisk(sub, targetSGPA);
-              const r = RISK[riskLevel];
-              const diff = getDifficulty(sub.difficulty);
-              const pScore = matrix.find(m => m.id === sub.id).priorityScore;
-              return `
-                <div class="p-4 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800 hover:shadow-md transition-shadow relative">
-                  <div class="absolute top-4 right-4 ${r.tailwind}">${r.emoji}</div>
-                  <h3 class="font-semibold text-gray-900 dark:text-gray-100 mb-2 pr-6 truncate" title="${sub.name}">${sub.name}</h3>
-                  <div class="flex gap-2 mb-3">
-                    <span class="px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-xs rounded font-medium">${sub.credits} CR</span>
-                    <span class="px-2 py-0.5 bg-${diff.color}-100 dark:bg-${diff.color}-900/30 text-${diff.color}-700 dark:text-${diff.color}-300 text-xs rounded font-medium">${diff.label}</span>
-                    <span class="px-2 py-0.5 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 text-xs rounded font-medium">Grade: ${sub.expectedGrade}</span>
-                  </div>
-                  <div class="mt-2">
-                    <div class="flex justify-between text-xs text-gray-500 dark:text-gray-400 mb-1">
-                      <span>Priority Score</span>
-                      <span>${pScore.toFixed(2)}</span>
-                    </div>
-                    <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5">
-                      <div class="bg-indigo-500 h-1.5 rounded-full" style="width: ${Math.min((pScore/10)*100, 100)}%"></div>
-                    </div>
-                  </div>
-                </div>
-              `;
-            }).join('')}
-          </div>
-        </div>
+    // Situation card
+    html += '<div class="card p-6">';
+    html += '<h2 class="text-lg font-semibold mb-4 flex items-center gap-2">\uD83C\uDFAF Your Situation</h2>';
+    html += '<p class="text-slate-700 dark:text-slate-300 mb-4">' + situationText + '</p>';
+    html += '<div class="space-y-3">';
+    html += '<div class="flex justify-between items-center bg-rose-50 dark:bg-rose-900/20 px-4 py-2 rounded-lg text-rose-700 dark:text-rose-400"><span>\uD83D\uDD34 High Risk</span><span class="font-bold">' + risk.counts.high + '</span></div>';
+    html += '<div class="flex justify-between items-center bg-amber-50 dark:bg-amber-900/20 px-4 py-2 rounded-lg text-amber-700 dark:text-amber-400"><span>\uD83D\uDFE1 Medium Risk</span><span class="font-bold">' + risk.counts.medium + '</span></div>';
+    html += '<div class="flex justify-between items-center bg-emerald-50 dark:bg-emerald-900/20 px-4 py-2 rounded-lg text-emerald-700 dark:text-emerald-400"><span>\uD83D\uDFE2 Safe</span><span class="font-bold">' + risk.counts.low + '</span></div>';
+    html += '</div></div>';
 
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <!-- Section 6: Difficulty × Credits Matrix -->
-          <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-6 overflow-x-auto">
-            <h2 class="text-lg font-semibold mb-4 flex items-center gap-2">🎯 Difficulty vs Credits</h2>
-            <div class="relative w-full min-w-[400px] h-64 border-l-2 border-b-2 border-gray-300 dark:border-gray-600 pl-2 pb-2 mb-6 mt-4">
-              <div class="absolute -left-6 top-1/2 -translate-y-1/2 -rotate-90 text-xs text-gray-500 dark:text-gray-400 font-medium tracking-wider uppercase">Difficulty</div>
-              <div class="absolute bottom-[-24px] left-1/2 -translate-x-1/2 text-xs text-gray-500 dark:text-gray-400 font-medium tracking-wider uppercase">Credits</div>
-              
-              <!-- Y-axis labels -->
-              <div class="absolute left-[-45px] top-[10%] text-xs text-gray-500 text-right w-10">Hard</div>
-              <div class="absolute left-[-45px] top-[50%] -translate-y-1/2 text-xs text-gray-500 text-right w-10">Med</div>
-              <div class="absolute left-[-45px] bottom-[10%] text-xs text-gray-500 text-right w-10">Easy</div>
+    html += '</div>'; // end grid
 
-              <!-- X-axis labels -->
-              ${[1,2,3,4,5,6].map(c => `<div class="absolute bottom-[-20px] text-xs text-gray-500" style="left: ${((c-1)/5)*100}%">${c}</div>`).join('')}
+    // --- Section 3 & 5: Health + Opportunities ---
+    html += '<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">';
 
-              <!-- Data Points -->
-              ${matrix.map(m => {
-                const x = ((m.credits - 1) / 5) * 100;
-                let yPos = 50;
-                if (m.difficulty === 'hard') yPos = 10;
-                else if (m.difficulty === 'easy') yPos = 90;
-                
-                // Add slight jitter for identical points to prevent complete overlap (optional visual tweak, keep simple for now)
-                const rColor = m.risk === 'high' ? 'bg-rose-500' : m.risk === 'medium' ? 'bg-amber-500' : 'bg-emerald-500';
-                
-                return `
-                  <div class="absolute w-4 h-4 rounded-full ${rColor} border-2 border-white dark:border-gray-800 transform -translate-x-1/2 -translate-y-1/2 shadow-sm cursor-pointer group hover:z-10" style="left: ${x}%; top: ${yPos}%;">
-                    <div class="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 hidden group-hover:block w-max bg-gray-900 text-white text-xs px-2 py-1 rounded whitespace-nowrap z-20">
-                      ${m.name} (${m.credits}CR, ${m.expectedGrade})
-                    </div>
-                  </div>
-                `;
-              }).join('')}
-            </div>
-            ${matrix.length > 0 ? (() => {
-              const highestPriority = [...matrix].sort((a,b)=>b.priorityScore-a.priorityScore)[0];
-              return `<p class="text-sm font-medium text-indigo-600 dark:text-indigo-400">Focus first: ${highestPriority.name}</p>`;
-            })() : ''}
-          </div>
+    // Academic Health
+    const dashOffset = 276 - (276 * health.score) / 100;
+    html += '<div class="card p-6">';
+    html += '<h2 class="text-lg font-semibold mb-6 flex items-center gap-2">\uD83C\uDFE5 Academic Health</h2>';
+    html += '<div class="flex items-center gap-6 mb-6">';
+    html += '<div class="relative w-24 h-24 flex-shrink-0">';
+    html += '<svg viewBox="0 0 96 96" class="w-full h-full transform -rotate-90">';
+    html += '<circle cx="48" cy="48" r="40" fill="none" stroke-width="8" class="stroke-slate-200 dark:stroke-slate-700"></circle>';
+    html += '<circle cx="48" cy="48" r="40" fill="none" stroke-width="8" stroke-linecap="round" class="' + health.tailwind.replace('text-', 'stroke-') + '" stroke-dasharray="251" stroke-dashoffset="' + (251 - (251 * health.score) / 100) + '" style="transition: stroke-dashoffset 1s"></circle>';
+    html += '</svg>';
+    html += '<div class="absolute inset-0 flex items-center justify-center"><span class="text-2xl font-bold ' + health.tailwind + '">' + health.score + '</span></div>';
+    html += '</div>';
+    html += '<div><p class="text-xl font-bold ' + health.tailwind + '">' + health.healthLabel + '</p>';
+    html += '<p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Score out of 100</p></div>';
+    html += '</div>';
 
-          <!-- Section 7: Study Time Allocation -->
-          <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
-            <h2 class="text-lg font-semibold mb-4 flex items-center gap-2">📅 Study Time Allocation</h2>
-            <p class="text-sm text-gray-600 dark:text-gray-400 mb-6">
-              Study time is weighted toward subjects where improvement has the greatest impact. (Total: ${studyHoursPerWeek} hrs/week)
-            </p>
-            <div class="space-y-4">
-              ${studyPlan.map((plan, i) => {
-                const priorityClass = i < 2 ? 'text-rose-500' : (i < 4 ? 'text-amber-500' : 'text-emerald-500');
-                const emoji = i < 2 ? '🔥' : (i < 4 ? '🟡' : '🟢');
-                const percent = (plan.hours / studyHoursPerWeek) * 100;
-                return `
-                  <div>
-                    <div class="flex justify-between text-sm mb-1">
-                      <span class="font-medium text-gray-800 dark:text-gray-200 truncate pr-4" title="${plan.name}">${emoji} ${plan.name}</span>
-                      <span class="text-gray-500 dark:text-gray-400 whitespace-nowrap">${plan.hours.toFixed(1)} hrs</span>
-                    </div>
-                    <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                      <div class="bg-indigo-500 h-2 rounded-full" style="width: ${percent}%"></div>
-                    </div>
-                  </div>
-                `;
-              }).join('')}
-            </div>
-          </div>
-        </div>
+    // Health breakdown bars
+    const breakdowns = [
+      { label: 'Target Proximity', val: health.breakdown.sgpaScore, max: 40 },
+      { label: 'Risk Control', val: health.breakdown.riskScore, max: 20 },
+      { label: 'Improvement Headroom', val: health.breakdown.potentialScore, max: 20 },
+      { label: 'Grade Balance', val: health.breakdown.balanceScore, max: 20 },
+    ];
+    html += '<div class="space-y-3 text-sm">';
+    for (const b of breakdowns) {
+      const pct = (b.val / b.max) * 100;
+      html += '<div>';
+      html += '<div class="flex justify-between mb-1 text-slate-600 dark:text-slate-300"><span>' + b.label + '</span><span>' + b.val + '/' + b.max + '</span></div>';
+      html += '<div class="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2"><div class="bg-primary-500 h-2 rounded-full" style="width:' + pct + '%"></div></div>';
+      html += '</div>';
+    }
+    html += '</div></div>';
 
-        <!-- Simulator Mount Point -->
-        <div id="simulator-mount" class="mt-6"></div>
-      </div>
-    `;
+    // Best Opportunities
+    html += '<div class="card p-6">';
+    html += '<h2 class="text-lg font-semibold mb-4 flex items-center gap-2">\uD83D\uDD25 Best Opportunities</h2>';
+
+    if (improvements.recommended.changes.length > 0) {
+      html += '<p class="text-sm text-slate-600 dark:text-slate-400 mb-4">Improving these <strong>' + improvements.recommended.changes.length + '</strong> subjects could get you to <strong>' + improvements.recommended.projectedSGPA.toFixed(2) + ' SGPA</strong>.</p>';
+    } else {
+      html += '<p class="text-sm text-slate-600 dark:text-slate-400 mb-4">You are already hitting your target! Keep it up. \uD83C\uDF89</p>';
+    }
+
+    html += '<div class="space-y-3 max-h-64 overflow-y-auto pr-2">';
+    const topOpps = improvements.opportunities.slice(0, 6);
+    for (const opp of topOpps) {
+      html += '<div class="p-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg flex justify-between items-center border border-slate-100 dark:border-slate-700">';
+      html += '<div><p class="font-semibold text-slate-900 dark:text-slate-100">' + opp.subjectName + '</p>';
+      html += '<p class="text-xs text-slate-500 dark:text-slate-400 mt-1">' + opp.fromGrade + ' \u2192 ' + opp.toGrade + '</p></div>';
+      html += '<span class="inline-block px-2 py-1 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-xs font-bold rounded">+' + opp.impact.toFixed(2) + ' SGPA</span>';
+      html += '</div>';
+    }
+    if (topOpps.length === 0) {
+      html += '<p class="text-sm text-slate-500">No further upgrades possible.</p>';
+    }
+    html += '</div></div>';
+
+    html += '</div>'; // end grid
+
+    // --- Section 4: Subject Cards ---
+    html += '<div class="card p-6">';
+    html += '<h2 class="text-lg font-semibold mb-6 flex items-center gap-2">\uD83D\uDCDA Subject Priorities</h2>';
+    html += '<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">';
+
+    for (const sub of subjects) {
+      const riskLevel = getSubjectRisk(sub, targetSGPA);
+      const r = RISK[riskLevel];
+      const diff = getDifficulty(sub.difficulty);
+      const matrixEntry = matrix.find(m => m.id === sub.id);
+      const pScore = matrixEntry ? matrixEntry.priorityScore : 0;
+      const pWidth = Math.min((pScore / 10) * 100, 100);
+
+      html += '<div class="p-4 border border-slate-200 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800 hover:shadow-md transition-shadow relative card-hover">';
+      html += '<div class="absolute top-4 right-4 ' + r.tailwind + '">' + r.emoji + '</div>';
+      html += '<h3 class="font-semibold text-slate-900 dark:text-slate-100 mb-2 pr-6 truncate" title="' + sub.name + '">' + sub.name + '</h3>';
+      html += '<div class="flex flex-wrap gap-2 mb-3">';
+      html += '<span class="px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-xs rounded font-medium">' + sub.credits + ' CR</span>';
+      html += '<span class="px-2 py-0.5 bg-' + diff.color + '-100 dark:bg-' + diff.color + '-900/30 text-' + diff.color + '-700 dark:text-' + diff.color + '-300 text-xs rounded font-medium">' + diff.label + '</span>';
+      html += '<span class="px-2 py-0.5 bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs rounded font-medium">Grade: ' + sub.expectedGrade + '</span>';
+      html += '</div>';
+      html += '<div class="mt-2">';
+      html += '<div class="flex justify-between text-xs text-slate-500 dark:text-slate-400 mb-1"><span>Priority Score</span><span>' + pScore.toFixed(2) + '</span></div>';
+      html += '<div class="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-1.5"><div class="bg-primary-500 h-1.5 rounded-full" style="width:' + pWidth + '%"></div></div>';
+      html += '</div></div>';
+    }
+
+    html += '</div></div>';
+
+    // --- Section 6 & 7: Matrix + Study Plan ---
+    html += '<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">';
+
+    // Difficulty × Credits Matrix
+    html += '<div class="card p-6">';
+    html += '<h2 class="text-lg font-semibold mb-4 flex items-center gap-2">\uD83E\uDDE0 Difficulty \u00D7 Credits</h2>';
+    html += '<div class="relative w-full h-64 border-l-2 border-b-2 border-slate-300 dark:border-slate-600 ml-12 mb-8 mt-4">';
+
+    // Y-axis labels
+    html += '<div class="absolute -left-12 top-[10%] text-xs text-slate-500 text-right w-10">Hard</div>';
+    html += '<div class="absolute -left-12 top-[50%] -translate-y-1/2 text-xs text-slate-500 text-right w-10">Med</div>';
+    html += '<div class="absolute -left-12 bottom-[10%] text-xs text-slate-500 text-right w-10">Easy</div>';
+
+    // X-axis labels
+    for (let c = 1; c <= 6; c++) {
+      const xPos = ((c - 1) / 5) * 100;
+      html += '<div class="absolute -bottom-6 text-xs text-slate-500" style="left:' + xPos + '%">' + c + '</div>';
+    }
+
+    // Data points
+    for (const m of matrix) {
+      const x = ((m.credits - 1) / 5) * 100;
+      let yPos = 50;
+      if (m.difficulty === 'hard') yPos = 10;
+      else if (m.difficulty === 'easy') yPos = 90;
+
+      const dotColor = m.risk === 'high' ? 'bg-rose-500' : m.risk === 'medium' ? 'bg-amber-500' : 'bg-emerald-500';
+
+      html += '<div class="absolute w-5 h-5 rounded-full ' + dotColor + ' border-2 border-white dark:border-slate-800 transform -translate-x-1/2 -translate-y-1/2 shadow-sm cursor-pointer group hover:scale-125 hover:z-10 transition-transform" style="left:' + x + '%;top:' + yPos + '%">';
+      html += '<div class="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 hidden group-hover:block w-max bg-slate-900 text-white text-xs px-2 py-1 rounded whitespace-nowrap z-20">' + m.name + ' (' + m.credits + 'CR, ' + m.expectedGrade + ')</div>';
+      html += '</div>';
+    }
+
+    html += '</div>'; // end matrix
+
+    // Focus recommendation
+    if (matrix.length > 0) {
+      const sorted = [...matrix].sort((a, b) => b.priorityScore - a.priorityScore);
+      html += '<p class="text-sm font-medium text-primary-600 dark:text-primary-400 mt-2">\uD83C\uDFAF Focus first: <strong>' + sorted[0].name + '</strong></p>';
+    }
+    html += '</div>';
+
+    // Study Time Allocation
+    html += '<div class="card p-6">';
+    html += '<h2 class="text-lg font-semibold mb-4 flex items-center gap-2">\uD83D\uDCC5 Study Time Allocation</h2>';
+    html += '<p class="text-sm text-slate-600 dark:text-slate-400 mb-6">Study time is weighted toward subjects where improvement has the greatest impact. (Total: ' + studyHoursPerWeek + ' hrs/week)</p>';
+    html += '<div class="space-y-4">';
+
+    studyPlan.forEach((plan, i) => {
+      const emoji = i < 2 ? '\uD83D\uDD25' : (i < 4 ? '\uD83D\uDFE1' : '\uD83D\uDFE2');
+      const pct = (plan.hours / studyHoursPerWeek) * 100;
+      const barColor = i < 2 ? 'bg-rose-500' : (i < 4 ? 'bg-amber-500' : 'bg-emerald-500');
+
+      html += '<div>';
+      html += '<div class="flex justify-between text-sm mb-1">';
+      html += '<span class="font-medium text-slate-800 dark:text-slate-200 truncate pr-4" title="' + plan.name + '">' + emoji + ' ' + plan.name + '</span>';
+      html += '<span class="text-slate-500 dark:text-slate-400 whitespace-nowrap">' + plan.hours.toFixed(1) + ' hrs</span>';
+      html += '</div>';
+      html += '<div class="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2"><div class="' + barColor + ' h-2 rounded-full" style="width:' + pct + '%"></div></div>';
+      html += '</div>';
+    });
+
+    html += '</div></div>';
+    html += '</div>'; // end grid
+
+    // Simulator mount point
+    html += '<div id="simulator-mount" class="mt-6"></div>';
+
+    html += '</div>'; // end wrapper
+
+    container.innerHTML = html;
 
     // Event Listeners
     container.querySelector('#btn-edit').addEventListener('click', () => {
@@ -285,6 +266,6 @@ export function renderDashboard(container) {
   // Initial render
   render();
 
-  // Subscribe to changes — re-render on any state update
+  // Subscribe to changes
   subscribe(render);
 }
