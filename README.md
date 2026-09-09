@@ -6,6 +6,17 @@ Enter your subjects once, set a target SGPA, and GradePilot tells you **what to 
 
 ## Features
 
+### 🧮 Marks Calculator & Exam Target Engine (V2)
+- Input actual marks for Continuous Assessment (**CA**), **Midterm**, and **End Term**
+- Pre-configured assessment schemes (`20/30/50`, `25/25/50`, `40/60`, `30/70`, Custom)
+- Real-time projected percentage (0–100%) and automatic grade mapping
+- **"What do I need in End Term?"**: Tells you the exact marks out of 50/60/70 required on your final exam to secure an **O**, **A+**, **A**, or **B+**
+
+### ⚡ 1-Click Fast Setup & Quick Chips
+- **1-Click Semester Presets**: Load ready-made semester packages (B.Tech CSE Sem 3, Engineering Core) in 1 second
+- **Popular Subject Chips**: Instant `+` buttons for Math, DSA, OS, Python, DBMS, Physics, EVS with pre-configured credits & difficulty
+- Fast keyboard entry with Enter-to-add
+
 ### 📊 Semester Dashboard
 - Expected vs Target SGPA with progress bar
 - Risk analysis (high/medium/low per subject)
@@ -40,12 +51,11 @@ No backend. No database. No login. Data lives in `localStorage`.
 
 1. Clone the repo
 2. Open `index.html` in a browser (or use a local server for ES modules)
-3. Add your subjects, set your target, launch the dashboard
+3. Add your subjects (or click a 1-click preset), set your target, launch the dashboard
 
 ```bash
-# Option 1: Direct open (may need a server for ES modules)
-# Option 2: Use any static server
-npx serve .
+# Serve locally
+npx serve . -l 3000
 # or
 python -m http.server 8000
 ```
@@ -67,8 +77,8 @@ Uses the standard Indian 10-point system:
 ## Roadmap
 
 - [x] **V1** — Subject setup, SGPA engine, target analysis, priority recommendations
-- [ ] **V2** — CA + Midterm + EndTerm marks → expected grade
-- [ ] **V3** — CGPA planner across semesters
+- [x] **V2** — Fast 1-click setup, CA + Midterm + EndTerm marks calculator & exam target engine
+- [ ] **V3** — Multi-semester CGPA planner & projection
 - [ ] **V4** — PWA (installable, offline-capable)
 
 ## License

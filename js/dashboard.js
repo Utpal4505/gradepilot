@@ -1,8 +1,3 @@
-// ──────────────────────────────────────────────
-//  GradePilot · dashboard.js
-//  Main dashboard view — 7 sections + simulator mount
-// ──────────────────────────────────────────────
-
 import { getState, setState, resetState, subscribe } from './state.js';
 import {
   calculateSGPA, totalCredits, getRiskSummary, getSubjectRisk,
@@ -10,11 +5,12 @@ import {
   getDifficultyCreditsMatrix, getStudyPlan
 } from './engine.js';
 import { getDifficulty, RISK } from './utils.js';
+import { renderMarksCalculator } from './marks.js';
 
 export function renderDashboard(container) {
   function render() {
     const state = getState();
-    const { subjects, targetSGPA, studyHoursPerWeek } = state;
+    const { subjects, targetSGPA, studyHoursPerWeek, activeTab = 'overview' } = state;
 
     if (subjects.length === 0) {
       container.innerHTML = '<div class="p-8 text-center"><p class="text-slate-500 dark:text-slate-400">No subjects found. Please go back and add subjects.</p></div>';
@@ -39,21 +35,42 @@ export function renderDashboard(container) {
       ? 'You need approximately <strong>+' + gap.toFixed(2) + ' SGPA</strong> to reach your target.'
       : '\u2705 Congratulations! You are on track to meet or exceed your target.';
 
-    // Build HTML using string concatenation to avoid nested template literal issues
+    let html = '<div class="space-y-6">';
 
-    // --- Section 1 & 2: Overview + Situation ---
-    let html = '<div class="space-y-8">';
-
-    // Header with buttons
+    // Header with title and actions
     html += '<div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">';
-    html += '<h1 class="text-3xl font-bold text-slate-900 dark:text-white flex items-center gap-2">\uD83D\uDE80 Dashboard</h1>';
-    html += '<div class="flex gap-3">';
-    html += '<button id="btn-edit" class="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg font-medium transition-colors text-sm">Edit Subjects</button>';
-    html += '<button id="btn-reset" class="px-4 py-2 bg-white dark:bg-slate-800 text-rose-600 border border-rose-200 dark:border-rose-900 hover:bg-rose-50 dark:hover:bg-rose-950 rounded-lg text-sm font-medium transition-colors">Reset</button>';
+    html += '<div>';
+    html += '<h1 class="text-3xl font-bold text-slate-900 dark:text-white flex items-center gap-2">\uD83D\uDE80 Academic Command Center</h1>';
+    html += '<p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Live Semester Strategy & Exam Target Engine</p>';
+    html += '</div>';
+    html += '<div class="flex gap-2">';
+    html += '<button id="btn-edit" class="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-medium transition-colors text-xs sm:text-sm shadow-xs flex items-center gap-1.5"><span>✏️</span> Edit Subjects</button>';
+    html += '<button id="btn-reset" class="px-3.5 py-2 bg-white dark:bg-slate-800 text-rose-600 border border-rose-200 dark:border-rose-900 hover:bg-rose-50 dark:hover:bg-rose-950 rounded-xl text-xs sm:text-sm font-medium transition-colors">Reset</button>';
     html += '</div></div>';
 
-    // Overview + Situation row
-    html += '<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">';
+    // Tabs Switcher
+    const isOverview = activeTab === 'overview';
+    const isMarks = activeTab === 'marks';
+
+    html += '<div class="flex items-center gap-2 p-1 bg-slate-100 dark:bg-slate-800/80 rounded-xl border border-slate-200 dark:border-slate-700 w-full sm:w-max">';
+    html += '<button id="tab-overview" class="flex-1 sm:flex-initial px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all flex items-center justify-center gap-2 ' +
+      (isOverview ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-white shadow-xs' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900') + '">';
+    html += '<span>📊</span> Overview & Strategy';
+    html += '</button>';
+
+    html += '<button id="tab-marks" class="flex-1 sm:flex-initial px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all flex items-center justify-center gap-2 ' +
+      (isMarks ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-white shadow-xs' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900') + '">';
+    html += '<span>🧮</span> Marks & Exam Targets (V2)';
+    html += '</button>';
+    html += '</div>';
+
+    if (isMarks) {
+      // Marks Calculator View
+      html += '<div id="marks-mount" class="mt-4"></div>';
+    } else {
+      // Overview View
+      // Overview + Situation row
+      html += '<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">';
 
     // Overview card
     html += '<div class="col-span-1 lg:col-span-2 card p-6">';
@@ -235,11 +252,12 @@ export function renderDashboard(container) {
       html += '</div>';
     });
 
-    html += '</div></div>';
-    html += '</div>'; // end grid
+      html += '</div></div>';
+      html += '</div>'; // end grid
 
-    // Simulator mount point
-    html += '<div id="simulator-mount" class="mt-6"></div>';
+      // Simulator mount point (lives inside Overview)
+      html += '<div id="simulator-mount" class="mt-6"></div>';
+    } // end overview check
 
     html += '</div>'; // end wrapper
 
@@ -256,10 +274,26 @@ export function renderDashboard(container) {
       }
     });
 
-    // Re-render the simulator into the new mount point
-    const simMount = container.querySelector('#simulator-mount');
-    if (simMount && typeof window.__renderSimulator === 'function') {
-      window.__renderSimulator(simMount);
+    // Tab Listeners
+    container.querySelector('#tab-overview').addEventListener('click', () => {
+      setState({ activeTab: 'overview' });
+    });
+
+    container.querySelector('#tab-marks').addEventListener('click', () => {
+      setState({ activeTab: 'marks' });
+    });
+
+    // Mount sub-modules
+    if (isMarks) {
+      const marksMount = container.querySelector('#marks-mount');
+      if (marksMount) {
+        renderMarksCalculator(marksMount);
+      }
+    } else {
+      const simMount = container.querySelector('#simulator-mount');
+      if (simMount && typeof window.__renderSimulator === 'function') {
+        window.__renderSimulator(simMount);
+      }
     }
   }
 

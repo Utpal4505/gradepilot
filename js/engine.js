@@ -5,25 +5,117 @@
 
 import {
   gradeToPoints, getDifficulty, MAX_GRADE_POINTS,
-  GRADES, round, possibleUpgrades, RISK,
+  GRADES, marksToGrade, marksRequiredInEndTerm, round, possibleUpgrades, RISK,
 } from './utils.js';
+
+// ── Marks Evaluation ─────────────────────────
+
+/**
+ * Evaluates a subject's assessment marks (CA, Midterm, End Term)
+ * Computes scored totals, projected percentage, derived grade, and marks needed in End Term.
+ */
+export function evaluateSubjectMarks(subject) {
+  const marks = subject.marks || {};
+  const ca = marks.ca || { scored: null, max: 20 };
+  const midterm = marks.midterm || { scored: null, max: 30 };
+  const endterm = marks.endterm || { scored: null, max: 50, target: null };
+
+  const caScored = ca.scored !== null && !isNaN(ca.scored) ? Number(ca.scored) : 0;
+  const caMax = Number(ca.max) || 0;
+
+  const midScored = midterm.scored !== null && !isNaN(midterm.scored) ? Number(midterm.scored) : 0;
+  const midMax = Number(midterm.max) || 0;
+
+  const currentScored = caScored + midScored;
+  const currentMax = caMax + midMax;
+
+  const endtermMax = Number(endterm.max) || 0;
+  const endtermScored = (endterm.scored !== null && !isNaN(endterm.scored))
+    ? Number(endterm.scored)
+    : (endterm.target !== null && !isNaN(endterm.target) ? Number(endterm.target) : null);
+
+  const totalCourseMax = currentMax + endtermMax;
+
+  let totalProjectedMarks = null;
+  let projectedPercentage = null;
+  let projectedGrade = subject.expectedGrade;
+
+  if (endtermScored !== null) {
+    totalProjectedMarks = round(currentScored + endtermScored, 1);
+    projectedPercentage = totalCourseMax > 0 ? round((totalProjectedMarks / totalCourseMax) * 100, 1) : 0;
+    projectedGrade = marksToGrade(projectedPercentage);
+  } else if (currentMax > 0 && (ca.scored !== null || midterm.scored !== null)) {
+    // Extrapolate current run-rate if no endterm target set
+    projectedPercentage = round((currentScored / currentMax) * 100, 1);
+    projectedGrade = marksToGrade(projectedPercentage);
+    totalProjectedMarks = round((projectedPercentage / 100) * totalCourseMax, 1);
+  }
+
+  // Calculate target marks needed in End Term for each grade
+  const endtermRequirements = [];
+  for (const g of GRADES) {
+    if (g.grade === 'F') continue;
+    const needed = marksRequiredInEndTerm(currentScored, currentMax, totalCourseMax, endtermMax, g.minMarks);
+    endtermRequirements.push({
+      grade: g.grade,
+      minMarks: g.minMarks,
+      points: g.points,
+      needed,
+      isCurrentProjected: g.grade === projectedGrade,
+    });
+  }
+
+  return {
+    caScored,
+    caMax,
+    midScored,
+    midMax,
+    currentScored,
+    currentMax,
+    endtermMax,
+    endtermScored,
+    totalCourseMax,
+    totalProjectedMarks,
+    projectedPercentage,
+    projectedGrade,
+    endtermRequirements,
+  };
+}
+
+/**
+ * Returns the effective grade of a subject.
+ * Priority: simulatedGrade (if useSimulated) > marks-projected grade (if useMarksCalc) > expectedGrade
+ */
+export function getSubjectEffectiveGrade(subject, useSimulated = false) {
+  if (useSimulated && subject.simulatedGrade) {
+    return subject.simulatedGrade;
+  }
+  if (subject.useMarksCalc) {
+    const evaluated = evaluateSubjectMarks(subject);
+    if (evaluated.projectedGrade) {
+      return evaluated.projectedGrade;
+    }
+  }
+  return subject.expectedGrade;
+}
 
 // ── SGPA Calculation ─────────────────────────
 
 /**
  * Calculate SGPA from an array of subjects.
- * Uses simulatedGrade if present, else expectedGrade.
+ * Uses simulatedGrade if present and useSimulated is true,
+ * else uses effective grade (from marks or expectedGrade).
  *
  * SGPA = Σ(credit_i × gradePoint_i) / Σ(credit_i)
  */
 export function calculateSGPA(subjects, useSimulated = false) {
-  if (!subjects.length) return 0;
+  if (!subjects || !subjects.length) return 0;
 
   let totalWeighted = 0;
   let totalCredits = 0;
 
   for (const sub of subjects) {
-    const grade = (useSimulated && sub.simulatedGrade) ? sub.simulatedGrade : sub.expectedGrade;
+    const grade = getSubjectEffectiveGrade(sub, useSimulated);
     const points = gradeToPoints(grade);
     totalWeighted += sub.credits * points;
     totalCredits += sub.credits;
@@ -34,6 +126,7 @@ export function calculateSGPA(subjects, useSimulated = false) {
 
 /** Total credits across all subjects */
 export function totalCredits(subjects) {
+  if (!subjects) return 0;
   return subjects.reduce((sum, s) => sum + s.credits, 0);
 }
 
@@ -63,7 +156,8 @@ export function calculateSGPAImpact(subject, fromGrade, toGrade, subjects) {
  * Normalized to 0-1 range.
  */
 export function calculatePriorityScore(subject) {
-  const currentPoints = gradeToPoints(subject.expectedGrade);
+  const currentGrade = getSubjectEffectiveGrade(subject, false);
+  const currentPoints = gradeToPoints(currentGrade);
   const improvementPotential = (MAX_GRADE_POINTS - currentPoints) / MAX_GRADE_POINTS;
   const diffMultiplier = getDifficulty(subject.difficulty).multiplier;
 
@@ -96,16 +190,17 @@ export function getBestImprovements(subjects, targetSGPA) {
   const opportunities = [];
 
   for (const sub of subjects) {
-    const upgrades = possibleUpgrades(sub.expectedGrade);
+    const currentGrade = getSubjectEffectiveGrade(sub, false);
+    const upgrades = possibleUpgrades(currentGrade);
     for (const toGrade of upgrades) {
-      const impact = calculateSGPAImpact(sub, sub.expectedGrade, toGrade, subjects);
+      const impact = calculateSGPAImpact(sub, currentGrade, toGrade, subjects);
       if (impact > 0) {
         opportunities.push({
           subjectId: sub.id,
           subjectName: sub.name,
           credits: sub.credits,
           difficulty: sub.difficulty,
-          fromGrade: sub.expectedGrade,
+          fromGrade: currentGrade,
           toGrade,
           impact,
           priorityScore: calculatePriorityScore(sub),
@@ -142,15 +237,16 @@ function findMinimalImprovements(subjects, targetSGPA) {
   // Build candidate one-step upgrades sorted by impact
   const candidates = [];
   for (const sub of subjects) {
-    const upgrades = possibleUpgrades(sub.expectedGrade);
+    const currentGrade = getSubjectEffectiveGrade(sub, false);
+    const upgrades = possibleUpgrades(currentGrade);
     // Only consider the next grade up (one step)
     if (upgrades.length > 0) {
       const nextGrade = upgrades[upgrades.length - 1]; // next step up
-      const impact = calculateSGPAImpact(sub, sub.expectedGrade, nextGrade, subjects);
+      const impact = calculateSGPAImpact(sub, currentGrade, nextGrade, subjects);
       candidates.push({
         subjectId: sub.id,
         subjectName: sub.name,
-        fromGrade: sub.expectedGrade,
+        fromGrade: currentGrade,
         toGrade: nextGrade,
         credits: sub.credits,
         impact,
@@ -187,7 +283,8 @@ function findMinimalImprovements(subjects, targetSGPA) {
  * - Low risk: grade points >= target
  */
 export function getSubjectRisk(subject, targetSGPA) {
-  const points = gradeToPoints(subject.expectedGrade);
+  const currentGrade = getSubjectEffectiveGrade(subject, false);
+  const points = gradeToPoints(currentGrade);
   const priority = calculatePriorityScore(subject);
 
   if (points < targetSGPA - 1.5 && priority > 2) return 'high';
@@ -235,7 +332,7 @@ export function getAcademicHealth(subjects, targetSGPA) {
 
   // 3. Average improvement potential — lower is better (20 pts)
   const avgPotential = subjects.reduce((sum, s) => {
-    const pts = gradeToPoints(s.expectedGrade);
+    const pts = gradeToPoints(getSubjectEffectiveGrade(s, false));
     return sum + (MAX_GRADE_POINTS - pts) / MAX_GRADE_POINTS;
   }, 0) / subjects.length;
   const potentialScore = (1 - avgPotential) * 20;
@@ -244,7 +341,7 @@ export function getAcademicHealth(subjects, targetSGPA) {
   //    Penalize if heavy-credit subjects have low grades
   let weightedLowGrade = 0;
   for (const sub of subjects) {
-    const pts = gradeToPoints(sub.expectedGrade);
+    const pts = gradeToPoints(getSubjectEffectiveGrade(sub, false));
     if (pts < targetSGPA) {
       weightedLowGrade += sub.credits * (targetSGPA - pts);
     }
@@ -310,6 +407,6 @@ export function getDifficultyCreditsMatrix(subjects, targetSGPA) {
     difficultyValue: getDifficulty(sub.difficulty).multiplier,
     risk: getSubjectRisk(sub, targetSGPA),
     priorityScore: calculatePriorityScore(sub),
-    expectedGrade: sub.expectedGrade,
+    expectedGrade: getSubjectEffectiveGrade(sub, false),
   }));
 }

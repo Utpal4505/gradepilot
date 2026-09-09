@@ -3,12 +3,15 @@
 //  Central state management + localStorage
 // ──────────────────────────────────────────────
 
+import { uid, SEMESTER_PRESETS, ASSESSMENT_SCHEMES } from './utils.js';
+
 const STORAGE_KEY = 'gradepilot';
 
 /** Default fresh state */
 function defaultState() {
   return {
     view: 'wizard',        // 'wizard' | 'dashboard'
+    activeTab: 'overview', // 'overview' | 'marks'
     wizardStep: 1,         // 1 | 2 | 3
     mode: 'semester',      // 'semester' | 'cgpa'
     subjects: [],          // Array<Subject>
@@ -27,6 +30,13 @@ function defaultState() {
  *   credits: number (1-6),
  *   difficulty: 'easy' | 'medium' | 'hard',
  *   assessments: { ca: bool, midterm: bool, endterm: bool },
+ *   assessmentScheme: '20-30-50' | '25-25-50' | '40-60' | '30-70' | 'custom',
+ *   marks: {
+ *     ca: { scored: number|null, max: number },
+ *     midterm: { scored: number|null, max: number },
+ *     endterm: { scored: number|null, max: number, target: number|null }
+ *   },
+ *   useMarksCalc: boolean,
  *   expectedGrade: string ('A+', 'A', etc.),
  *   simulatedGrade: string | null  (for what-if)
  * }
@@ -77,14 +87,80 @@ export function updateSubject(id, changes) {
   notify();
 }
 
+/** Create a new complete Subject object with defaults */
+export function createSubject(partial = {}) {
+  const schemeKey = partial.assessmentScheme || '20-30-50';
+  const scheme = ASSESSMENT_SCHEMES[schemeKey] || ASSESSMENT_SCHEMES['20-30-50'];
+
+  return {
+    id: partial.id || uid(),
+    name: partial.name || '',
+    credits: Number(partial.credits) || 3,
+    difficulty: partial.difficulty || 'medium',
+    assessments: partial.assessments || { ca: true, midterm: true, endterm: true },
+    assessmentScheme: schemeKey,
+    marks: partial.marks || {
+      ca: { scored: null, max: scheme.caMax },
+      midterm: { scored: null, max: scheme.midtermMax },
+      endterm: { scored: null, max: scheme.endtermMax, target: null },
+    },
+    useMarksCalc: partial.useMarksCalc || false,
+    expectedGrade: partial.expectedGrade || 'A',
+    simulatedGrade: partial.simulatedGrade || null,
+  };
+}
+
 /** Add a subject */
 export function addSubject(subject) {
+  const complete = createSubject(subject);
   state = {
     ...state,
-    subjects: [...state.subjects, subject],
+    subjects: [...state.subjects, complete],
   };
   persist();
   notify();
+}
+
+/** Replace all subjects with a preset template */
+export function loadPreset(presetId) {
+  const preset = SEMESTER_PRESETS.find(p => p.id === presetId);
+  if (!preset) return false;
+
+  const newSubjects = preset.subjects.map(s => createSubject(s));
+  state = {
+    ...state,
+    subjects: newSubjects,
+  };
+  persist();
+  notify();
+  return true;
+}
+
+/** Update specific mark component for a subject */
+export function updateSubjectMarks(id, component, data) {
+  const sub = state.subjects.find(s => s.id === id);
+  if (!sub) return;
+
+  const currentMarks = sub.marks || {
+    ca: { scored: null, max: 20 },
+    midterm: { scored: null, max: 30 },
+    endterm: { scored: null, max: 50, target: null },
+  };
+
+  const updatedComponent = {
+    ...currentMarks[component],
+    ...data,
+  };
+
+  const newMarks = {
+    ...currentMarks,
+    [component]: updatedComponent,
+  };
+
+  updateSubject(id, {
+    marks: newMarks,
+    useMarksCalc: true, // User engaged with marks calculator for this subject
+  });
 }
 
 /** Remove a subject by ID */
