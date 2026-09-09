@@ -88,7 +88,6 @@ function renderStep2(contentDiv, navDiv, state) {
     credits: 3,
     difficulty: 'medium',
     assessmentScheme: '20-30-50',
-    assessments: { ca: true, midterm: true, endterm: true },
     expectedGrade: 'A'
   };
 
@@ -97,108 +96,155 @@ function renderStep2(contentDiv, navDiv, state) {
   contentDiv.innerHTML = `
     <div class="space-y-6">
       <div>
-        <h3 class="text-2xl font-bold text-gray-900 dark:text-white mb-1">Add your subjects</h3>
-        <p class="text-gray-500 dark:text-gray-400 text-sm">Use 1-click templates or quickly add subjects below.</p>
+        <h3 class="text-2xl font-bold text-gray-900 dark:text-white mb-1">Add your courses</h3>
+        <p class="text-gray-500 dark:text-gray-400 text-sm">Add your subjects in seconds. You only need the name, credits, and difficulty.</p>
       </div>
 
       <!-- Quick 1-Click Templates -->
-      <div class="bg-gradient-to-r from-indigo-50 to-violet-50 dark:from-indigo-950/40 dark:to-violet-950/40 border border-indigo-200 dark:border-indigo-800/60 rounded-xl p-4">
-        <div class="flex items-center justify-between gap-2 mb-2">
+      <div class="bg-indigo-50/70 dark:bg-indigo-950/40 border border-indigo-100 dark:border-indigo-900/60 rounded-2xl p-4">
+        <div class="flex items-center justify-between gap-2 mb-2.5">
           <span class="text-xs font-bold uppercase tracking-wider text-indigo-700 dark:text-indigo-300 flex items-center gap-1.5">
-            <span>⚡</span> 1-Click Quick Setup
+            <span>⚡</span> 1-Click Semester Presets
           </span>
-          <span class="text-xs text-indigo-500 dark:text-indigo-400">Loads a full semester in 1 second</span>
+          <span class="text-[11px] text-indigo-500 dark:text-indigo-400">Skip typing entirely</span>
         </div>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
           ${SEMESTER_PRESETS.map(p => `
-            <button type="button" class="preset-btn text-left p-3 rounded-lg border border-indigo-200 dark:border-indigo-800 bg-white/80 dark:bg-gray-800/80 hover:bg-white dark:hover:bg-gray-800 hover:border-indigo-400 hover:shadow-sm transition-all" data-preset="${p.id}">
-              <div class="font-semibold text-xs sm:text-sm text-indigo-900 dark:text-indigo-100">${p.name}</div>
-              <div class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">${p.description}</div>
+            <button type="button" class="preset-btn text-left p-3 rounded-xl border border-indigo-200/80 dark:border-indigo-800/80 bg-white dark:bg-gray-800 hover:border-indigo-500 hover:shadow-xs transition-all" data-preset="${p.id}">
+              <div class="font-bold text-xs sm:text-sm text-indigo-950 dark:text-indigo-100">${p.name}</div>
+              <div class="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5">${p.description}</div>
             </button>
           `).join('')}
         </div>
       </div>
 
-      <!-- Quick Add Chips -->
+      <!-- Quick Fill Suggestions -->
       <div>
-        <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
-          Or Quick-Add Popular Subjects (1-Click):
+        <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
+          💡 Quick-Fill Common Subjects:
         </label>
         <div class="flex flex-wrap gap-1.5">
           ${POPULAR_SUBJECTS.map(ps => `
-            <button type="button" class="chip-add-btn text-xs px-2.5 py-1 rounded-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:border-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 hover:text-indigo-600 dark:hover:text-indigo-300 transition-all flex items-center gap-1"
-              data-name="${ps.name}" data-credits="${ps.credits}" data-difficulty="${ps.difficulty}" data-grade="${ps.expectedGrade}">
-              <span>+</span>
-              <span>${ps.name}</span>
-              <span class="opacity-60 text-[10px]">(${ps.credits}CR)</span>
+            <button type="button" class="chip-fill-btn text-xs px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:border-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 hover:text-indigo-600 dark:hover:text-indigo-300 transition-all flex items-center gap-1.5 shadow-2xs"
+              data-name="${ps.name}" data-credits="${ps.credits}">
+              <span class="text-indigo-500 font-bold">+</span>
+              <span class="font-medium">${ps.name}</span>
+              <span class="text-gray-400 text-[10px]">(${ps.credits} CR)</span>
             </button>
           `).join('')}
         </div>
       </div>
 
-      <!-- Manual Subject Form -->
-      <form id="subject-form" class="space-y-4 border border-gray-200 dark:border-gray-700 rounded-xl p-4 bg-gray-50/70 dark:bg-gray-800/50 shadow-sm">
-        <div class="flex items-center justify-between">
-          <span class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
-            ${subjectToEdit ? '✏️ Edit Subject' : '➕ Custom Subject Form'}
+      <!-- Ultra-Clean Subject Form (Just 3 Simple Inputs) -->
+      <form id="subject-form" class="space-y-4 border border-gray-200 dark:border-gray-700 rounded-2xl p-5 bg-white dark:bg-gray-800 shadow-sm">
+        <div class="flex items-center justify-between pb-2 border-b border-gray-100 dark:border-gray-700">
+          <span class="text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-gray-300">
+            ${subjectToEdit ? '✏️ Edit Subject' : '➕ Subject Details'}
           </span>
-          ${subjectToEdit ? '<span class="text-xs text-indigo-600 dark:text-indigo-400 font-medium">Editing active subject</span>' : ''}
+          ${subjectToEdit ? '<span class="text-xs text-indigo-600 dark:text-indigo-400 font-semibold">Editing selected subject</span>' : ''}
         </div>
 
+        <!-- 1. Name -->
         <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Subject Name</label>
-          <input type="text" id="subj-name" required value="${values.name}" class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 px-3 py-2 border text-sm" placeholder="e.g. Mathematics, Operating Systems">
+          <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-1.5">
+            Subject Name
+          </label>
+          <input type="text" id="subj-name" required value="${values.name}"
+            class="w-full rounded-xl border-gray-300 dark:border-gray-600 dark:bg-gray-700/60 dark:text-white shadow-xs focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 px-3.5 py-2.5 border text-sm font-medium"
+            placeholder="e.g. Mathematics, Operating Systems, Physics">
         </div>
         
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <!-- 2. Credits & 3. Difficulty in a single clean row -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+          <!-- Credits -->
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Credits</label>
-            <input type="number" id="subj-credits" required min="1" max="8" value="${values.credits}" class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 px-3 py-2 border text-sm">
+            <div class="flex items-center justify-between mb-1.5">
+              <label class="text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                Credits
+              </label>
+              <span class="text-[11px] text-gray-400">Usually 2, 3, or 4</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <div class="flex gap-1">
+                ${[2, 3, 4].map(cr => `
+                  <button type="button" class="credit-pill px-3 py-1.5 text-xs font-bold rounded-lg border transition-all ${Number(values.credits) === cr ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs' : 'bg-gray-50 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-600 hover:border-indigo-300'}" data-cr="${cr}">
+                    ${cr}
+                  </button>
+                `).join('')}
+              </div>
+              <input type="number" id="subj-credits" required min="1" max="10" value="${values.credits}"
+                class="w-16 rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700/60 dark:text-white text-center shadow-xs focus:border-indigo-500 focus:ring-indigo-500 py-1.5 border text-sm font-bold">
+            </div>
           </div>
+
+          <!-- Difficulty -->
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Expected Grade</label>
-            <select id="subj-grade" class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 px-3 py-2 border text-sm">
-              ${SELECTABLE_GRADES.map(g => `<option value="${g.grade}" ${g.grade === values.expectedGrade ? 'selected' : ''}>${g.grade} (${g.label})</option>`).join('')}
-            </select>
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Exam Scheme</label>
-            <select id="subj-scheme" class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 px-3 py-2 border text-sm">
-              ${Object.entries(ASSESSMENT_SCHEMES).map(([key, s]) => `
-                <option value="${key}" ${key === (values.assessmentScheme || '20-30-50') ? 'selected' : ''}>${s.name}</option>
-              `).join('')}
-            </select>
+            <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-1.5">
+              Difficulty Level
+            </label>
+            <div class="flex gap-1.5">
+              ${[
+                { key: 'easy', label: 'Easy', emoji: '🟢', bg: 'bg-emerald-50 text-emerald-700 border-emerald-500' },
+                { key: 'medium', label: 'Medium', emoji: '🟡', bg: 'bg-amber-50 text-amber-700 border-amber-500' },
+                { key: 'hard', label: 'Hard', emoji: '🔴', bg: 'bg-rose-50 text-rose-700 border-rose-500' },
+              ].map(d => {
+                const isSelected = values.difficulty === d.key;
+                return `
+                  <button type="button" class="diff-btn flex-1 py-1.5 px-2 rounded-lg text-xs font-bold border transition-all flex items-center justify-center gap-1 ${isSelected ? d.bg + ' border-2 shadow-xs' : 'bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-600 hover:border-gray-300'}" data-key="${d.key}">
+                    <span>${d.emoji}</span>
+                    <span>${d.label}</span>
+                  </button>
+                `;
+              }).join('')}
+            </div>
           </div>
         </div>
 
-        <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Difficulty</label>
-          <div class="flex flex-wrap gap-2">
-            ${Object.entries(DIFFICULTY).map(([key, diff]) => {
-              const isSelected = values.difficulty === key;
-              const baseClasses = 'px-3.5 py-1.5 rounded-full text-xs font-semibold cursor-pointer transition-all';
-              const colors = isSelected 
-                ? `bg-${diff.color}-100 text-${diff.color}-800 border-2 border-${diff.color}-500 dark:bg-${diff.color}-900/40 dark:text-${diff.color}-300 shadow-sm` 
-                : 'bg-white text-gray-600 border border-gray-200 hover:border-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600';
-              return `<button type="button" class="diff-btn ${baseClasses} ${colors}" data-key="${key}">${diff.label}</button>`;
-            }).join('')}
+        <!-- Optional Accordion for Advanced Settings (Tucked away so beginners aren't confused) -->
+        <div class="pt-2">
+          <button type="button" id="btn-toggle-advanced" class="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 flex items-center gap-1">
+            <span id="adv-arrow">▶</span> ⚙️ Optional: Exam Scheme & Target Grade
+          </button>
+          
+          <div id="advanced-panel" class="hidden mt-3 p-3.5 bg-gray-50 dark:bg-gray-750 rounded-xl border border-gray-200 dark:border-gray-700 space-y-3">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">Target Grade</label>
+                <select id="subj-grade" class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white px-2.5 py-1.5 border text-xs font-medium">
+                  ${SELECTABLE_GRADES.map(g => `<option value="${g.grade}" ${g.grade === values.expectedGrade ? 'selected' : ''}>${g.grade} (${g.label})</option>`).join('')}
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">Exam Weighting Pattern</label>
+                <select id="subj-scheme" class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white px-2.5 py-1.5 border text-xs font-medium">
+                  ${Object.entries(ASSESSMENT_SCHEMES).map(([key, s]) => `
+                    <option value="${key}" ${key === (values.assessmentScheme || '20-30-50') ? 'selected' : ''}>${s.name}</option>
+                  `).join('')}
+                </select>
+              </div>
+            </div>
+            <p class="text-[11px] text-gray-400">Don't worry if you don't know your scheme yet—the standard college pattern (CA + Midterm + End Term) is pre-configured.</p>
           </div>
         </div>
 
-        <div class="pt-2 flex justify-end gap-2">
-          ${subjectToEdit ? `<button type="button" id="btn-cancel-edit" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-600 transition-colors">Cancel</button>` : ''}
-          <button type="submit" class="px-5 py-2 text-sm font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500">
-            ${subjectToEdit ? 'Update Subject' : '+ Add Subject (Enter)'}
+        <div class="pt-3 flex justify-end gap-2 border-t border-gray-100 dark:border-gray-700">
+          ${subjectToEdit ? `<button type="button" id="btn-cancel-edit" class="px-4 py-2 text-xs font-bold text-gray-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600 transition-colors">Cancel</button>` : ''}
+          <button type="submit" class="px-5 py-2.5 text-xs font-bold text-white bg-indigo-600 rounded-xl hover:bg-indigo-700 shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500 flex items-center gap-1.5">
+            <span>${subjectToEdit ? '✓' : '+'}</span>
+            <span>${subjectToEdit ? 'Save Changes' : 'Add Course (Press Enter)'}</span>
           </button>
         </div>
       </form>
 
-      <!-- Added Subjects List -->
+      <!-- Added Subjects List with 1-Click Inline Difficulty Switcher -->
       <div class="mt-8">
         <div class="flex items-center justify-between mb-3">
-          <h4 class="text-base font-bold text-gray-900 dark:text-white flex items-center gap-2">
-            <span>📚</span> Added Subjects (${state.subjects.length})
-          </h4>
+          <div>
+            <h4 class="text-base font-bold text-gray-900 dark:text-white flex items-center gap-2">
+              <span>📚</span> Your Courses (${state.subjects.length})
+            </h4>
+            <p class="text-xs text-gray-500 dark:text-gray-400">Click Easy / Med / Hard directly on any subject to adjust it:</p>
+          </div>
           ${state.subjects.length > 0 ? `
             <button type="button" id="btn-clear-subjects" class="text-xs text-rose-600 dark:text-rose-400 hover:underline">
               Clear All
@@ -208,31 +254,41 @@ function renderStep2(contentDiv, navDiv, state) {
 
         <div class="space-y-2.5" id="subject-list">
           ${state.subjects.length === 0 ? `
-            <div class="text-center py-6 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-xl">
-              <p class="text-gray-500 dark:text-gray-400 text-sm">No subjects added yet.</p>
-              <p class="text-xs text-indigo-600 dark:text-indigo-400 mt-1">Click a 1-click preset above or add one manually!</p>
+            <div class="text-center py-8 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-2xl bg-gray-50/50 dark:bg-gray-800/40">
+              <span class="text-2xl block mb-1">📖</span>
+              <p class="text-gray-600 dark:text-gray-300 text-sm font-semibold">No courses added yet</p>
+              <p class="text-xs text-indigo-600 dark:text-indigo-400 mt-1">Click a 1-click preset above or type a name to begin!</p>
             </div>
           ` : ''}
           ${state.subjects.map(s => {
-            const diff = DIFFICULTY[s.difficulty] || DIFFICULTY.medium;
             return `
-            <div class="flex items-center justify-between p-3.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xs hover:border-indigo-300 dark:hover:border-indigo-700 transition-all">
-              <div class="min-w-0 flex-1 pr-3">
-                <div class="flex items-center gap-2 flex-wrap">
-                  <h5 class="font-semibold text-gray-900 dark:text-white text-sm truncate">${s.name}</h5>
-                  <span class="px-2 py-0.5 text-[11px] rounded-full font-medium bg-${diff.color}-100 text-${diff.color}-800 dark:bg-${diff.color}-900/30 dark:text-${diff.color}-300">${diff.label}</span>
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between p-3.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xs gap-3">
+              <!-- Subject details -->
+              <div class="min-w-0 flex-1">
+                <div class="flex items-center gap-2">
+                  <h5 class="font-bold text-gray-900 dark:text-white text-sm truncate">${s.name}</h5>
+                  <span class="px-2 py-0.5 text-[11px] font-bold rounded-md bg-indigo-50 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300">${s.credits} Credits</span>
                 </div>
-                <div class="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  <span>${s.credits} Credits</span>
-                  <span>•</span>
-                  <span>Target: <strong class="text-gray-700 dark:text-gray-200">${s.expectedGrade}</strong></span>
-                  <span>•</span>
-                  <span class="text-indigo-600 dark:text-indigo-400">${s.assessmentScheme || '20-30-50'}</span>
-                </div>
+                <div class="text-xs text-gray-400 mt-1">Target Grade: <strong class="text-gray-700 dark:text-gray-300">${s.expectedGrade}</strong></div>
               </div>
-              <div class="flex items-center gap-1 shrink-0">
-                <button class="edit-btn text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300 text-xs font-medium px-2 py-1 rounded hover:bg-indigo-50 dark:hover:bg-indigo-900/30 transition-colors" data-id="${s.id}">Edit</button>
-                <button class="delete-btn text-rose-600 hover:text-rose-800 dark:text-rose-400 dark:hover:text-rose-300 text-xs font-medium px-2 py-1 rounded hover:bg-rose-50 dark:hover:bg-rose-900/30 transition-colors" data-id="${s.id}">Delete</button>
+
+              <!-- 1-Click Inline Difficulty Selector on the Card -->
+              <div class="flex items-center gap-2">
+                <div class="inline-flex rounded-lg border border-gray-200 dark:border-gray-700 p-0.5 bg-gray-50 dark:bg-gray-900">
+                  <button type="button" class="inline-diff-btn px-2 py-1 text-[11px] font-bold rounded-md transition-all ${s.difficulty === 'easy' ? 'bg-emerald-500 text-white shadow-2xs' : 'text-gray-500 hover:text-gray-800'}" data-id="${s.id}" data-diff="easy">
+                    Easy
+                  </button>
+                  <button type="button" class="inline-diff-btn px-2 py-1 text-[11px] font-bold rounded-md transition-all ${s.difficulty === 'medium' ? 'bg-amber-500 text-white shadow-2xs' : 'text-gray-500 hover:text-gray-800'}" data-id="${s.id}" data-diff="medium">
+                    Med
+                  </button>
+                  <button type="button" class="inline-diff-btn px-2 py-1 text-[11px] font-bold rounded-md transition-all ${s.difficulty === 'hard' ? 'bg-rose-500 text-white shadow-2xs' : 'text-gray-500 hover:text-gray-800'}" data-id="${s.id}" data-diff="hard">
+                    Hard
+                  </button>
+                </div>
+
+                <button class="delete-btn text-gray-400 hover:text-rose-600 p-1 rounded transition-colors" data-id="${s.id}" title="Remove subject">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                </button>
               </div>
             </div>
             `;
@@ -245,21 +301,49 @@ function renderStep2(contentDiv, navDiv, state) {
   // Local form state for difficulty
   let selectedDiff = values.difficulty;
   
+  // Difficulty button listeners on the form
   contentDiv.querySelectorAll('.diff-btn').forEach(btn => {
     btn.addEventListener('click', (e) => {
       e.preventDefault();
       selectedDiff = btn.dataset.key;
       contentDiv.querySelectorAll('.diff-btn').forEach(b => {
         const k = b.dataset.key;
-        const d = DIFFICULTY[k];
         if (k === selectedDiff) {
-          b.className = `diff-btn px-3.5 py-1.5 rounded-full text-xs font-semibold cursor-pointer transition-all bg-${d.color}-100 text-${d.color}-800 border-2 border-${d.color}-500 dark:bg-${d.color}-900/40 dark:text-${d.color}-300 shadow-sm`;
+          const colors = k === 'easy' ? 'bg-emerald-50 text-emerald-700 border-emerald-500' : (k === 'medium' ? 'bg-amber-50 text-amber-700 border-amber-500' : 'bg-rose-50 text-rose-700 border-rose-500');
+          b.className = `diff-btn flex-1 py-1.5 px-2 rounded-lg text-xs font-bold border transition-all flex items-center justify-center gap-1 ${colors} border-2 shadow-xs`;
         } else {
-          b.className = `diff-btn px-3.5 py-1.5 rounded-full text-xs font-semibold cursor-pointer transition-all bg-white text-gray-600 border border-gray-200 hover:border-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600`;
+          b.className = `diff-btn flex-1 py-1.5 px-2 rounded-lg text-xs font-bold border transition-all flex items-center justify-center gap-1 bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-600 hover:border-gray-300`;
         }
       });
     });
   });
+
+  // Credit pills listeners
+  contentDiv.querySelectorAll('.credit-pill').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const cr = btn.dataset.cr;
+      const input = contentDiv.querySelector('#subj-credits');
+      if (input) input.value = cr;
+      contentDiv.querySelectorAll('.credit-pill').forEach(b => {
+        if (b.dataset.cr === cr) {
+          b.className = 'credit-pill px-3 py-1.5 text-xs font-bold rounded-lg border transition-all bg-indigo-600 text-white border-indigo-600 shadow-xs';
+        } else {
+          b.className = 'credit-pill px-3 py-1.5 text-xs font-bold rounded-lg border transition-all bg-gray-50 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-600 hover:border-indigo-300';
+        }
+      });
+    });
+  });
+
+  // Toggle Advanced Panel
+  const toggleAdvBtn = contentDiv.querySelector('#btn-toggle-advanced');
+  const advPanel = contentDiv.querySelector('#advanced-panel');
+  const advArrow = contentDiv.querySelector('#adv-arrow');
+  if (toggleAdvBtn && advPanel) {
+    toggleAdvBtn.addEventListener('click', () => {
+      const isHidden = advPanel.classList.toggle('hidden');
+      advArrow.textContent = isHidden ? '▶' : '▼';
+    });
+  }
 
   // Preset button listeners
   contentDiv.querySelectorAll('.preset-btn').forEach(btn => {
@@ -269,20 +353,38 @@ function renderStep2(contentDiv, navDiv, state) {
     });
   });
 
-  // Chip quick add listeners
-  contentDiv.querySelectorAll('.chip-add-btn').forEach(btn => {
+  // Quick fill chips: Pre-fills the input box so the user can easily adjust difficulty or credits before adding!
+  contentDiv.querySelectorAll('.chip-fill-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const name = btn.dataset.name;
-      const credits = Number(btn.dataset.credits) || 3;
-      const difficulty = btn.dataset.difficulty || 'medium';
-      const expectedGrade = btn.dataset.grade || 'A';
-      addSubject({
-        name,
-        credits,
-        difficulty,
-        expectedGrade,
-        assessmentScheme: '20-30-50'
-      });
+      const credits = btn.dataset.credits;
+      const nameInput = contentDiv.querySelector('#subj-name');
+      const creditsInput = contentDiv.querySelector('#subj-credits');
+
+      if (nameInput) {
+        nameInput.value = name;
+        nameInput.focus();
+      }
+      if (creditsInput) {
+        creditsInput.value = credits;
+        // highlight matching credit pill
+        contentDiv.querySelectorAll('.credit-pill').forEach(b => {
+          if (b.dataset.cr === credits) {
+            b.className = 'credit-pill px-3 py-1.5 text-xs font-bold rounded-lg border transition-all bg-indigo-600 text-white border-indigo-600 shadow-xs';
+          } else {
+            b.className = 'credit-pill px-3 py-1.5 text-xs font-bold rounded-lg border transition-all bg-gray-50 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-600 hover:border-indigo-300';
+          }
+        });
+      }
+    });
+  });
+
+  // 1-Click Inline Difficulty Switcher on cards!
+  contentDiv.querySelectorAll('.inline-diff-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = btn.dataset.id;
+      const diff = btn.dataset.diff;
+      updateSubject(id, { difficulty: diff });
     });
   });
 
@@ -290,20 +392,21 @@ function renderStep2(contentDiv, navDiv, state) {
   const clearBtn = contentDiv.querySelector('#btn-clear-subjects');
   if (clearBtn) {
     clearBtn.addEventListener('click', () => {
-      if (confirm('Clear all subjects from the list?')) {
+      if (confirm('Clear all courses from the list?')) {
         setState({ subjects: [] });
       }
     });
   }
 
+  // Form Submission
   const form = contentDiv.querySelector('#subject-form');
   form.addEventListener('submit', (e) => {
     e.preventDefault();
     const nameInput = contentDiv.querySelector('#subj-name');
     const name = nameInput.value.trim();
-    const credits = parseInt(contentDiv.querySelector('#subj-credits').value, 10);
-    const expectedGrade = contentDiv.querySelector('#subj-grade').value;
-    const assessmentScheme = contentDiv.querySelector('#subj-scheme').value;
+    const credits = parseInt(contentDiv.querySelector('#subj-credits').value, 10) || 3;
+    const expectedGrade = contentDiv.querySelector('#subj-grade')?.value || 'A';
+    const assessmentScheme = contentDiv.querySelector('#subj-scheme')?.value || '20-30-50';
 
     if (!name) return;
 
@@ -329,20 +432,11 @@ function renderStep2(contentDiv, navDiv, state) {
     });
   }
 
-  contentDiv.querySelectorAll('.edit-btn').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      editingSubjectId = e.target.dataset.id;
-      setState({}); 
-    });
-  });
-
   contentDiv.querySelectorAll('.delete-btn').forEach(btn => {
     btn.addEventListener('click', (e) => {
-      if (confirm('Delete this subject?')) {
-        removeSubject(e.target.dataset.id);
-        if (editingSubjectId === e.target.dataset.id) {
-          editingSubjectId = null;
-        }
+      removeSubject(e.currentTarget.dataset.id);
+      if (editingSubjectId === e.currentTarget.dataset.id) {
+        editingSubjectId = null;
       }
     });
   });

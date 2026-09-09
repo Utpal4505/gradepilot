@@ -6,6 +6,7 @@
 import {
   gradeToPoints, getDifficulty, MAX_GRADE_POINTS,
   GRADES, marksToGrade, marksRequiredInEndTerm, round, possibleUpgrades, RISK,
+  getDaysRemaining, calculateUrgencyMultiplier,
 } from './utils.js';
 
 // ── Marks Evaluation ─────────────────────────
@@ -160,8 +161,10 @@ export function calculatePriorityScore(subject) {
   const currentPoints = gradeToPoints(currentGrade);
   const improvementPotential = (MAX_GRADE_POINTS - currentPoints) / MAX_GRADE_POINTS;
   const diffMultiplier = getDifficulty(subject.difficulty).multiplier;
+  const daysLeft = getDaysRemaining(subject.examDate);
+  const urgencyMultiplier = calculateUrgencyMultiplier(daysLeft);
 
-  return round(subject.credits * diffMultiplier * improvementPotential, 3);
+  return round(subject.credits * diffMultiplier * improvementPotential * urgencyMultiplier, 3);
 }
 
 /**

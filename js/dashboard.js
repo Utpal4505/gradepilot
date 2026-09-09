@@ -4,8 +4,9 @@ import {
   getAcademicHealth, getBestImprovements,
   getDifficultyCreditsMatrix, getStudyPlan
 } from './engine.js';
-import { getDifficulty, RISK } from './utils.js';
+import { getDifficulty, RISK, getDaysRemaining } from './utils.js';
 import { renderMarksCalculator } from './marks.js';
+import { renderExportModal } from './export.js';
 
 export function renderDashboard(container) {
   function render() {
@@ -44,8 +45,9 @@ export function renderDashboard(container) {
     html += '<p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Live Semester Strategy & Exam Target Engine</p>';
     html += '</div>';
     html += '<div class="flex gap-2">';
-    html += '<button id="btn-edit" class="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-medium transition-colors text-xs sm:text-sm shadow-xs flex items-center gap-1.5"><span>✏️</span> Edit Subjects</button>';
-    html += '<button id="btn-reset" class="px-3.5 py-2 bg-white dark:bg-slate-800 text-rose-600 border border-rose-200 dark:border-rose-900 hover:bg-rose-50 dark:hover:bg-rose-950 rounded-xl text-xs sm:text-sm font-medium transition-colors">Reset</button>';
+    html += '<button id="btn-export" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 rounded-xl font-semibold transition-all text-xs sm:text-sm border border-slate-200 dark:border-slate-700 flex items-center gap-1.5 shadow-2xs"><span>📤</span> Share / Export</button>';
+    html += '<button id="btn-edit" class="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-semibold transition-colors text-xs sm:text-sm shadow-xs flex items-center gap-1.5"><span>✏️</span> Edit Courses</button>';
+    html += '<button id="btn-reset" class="px-3 py-2 bg-white dark:bg-slate-800 text-rose-600 border border-rose-200 dark:border-rose-900 hover:bg-rose-50 dark:hover:bg-rose-950 rounded-xl text-xs sm:text-sm font-semibold transition-colors">Reset</button>';
     html += '</div></div>';
 
     // Tabs Switcher
@@ -98,6 +100,35 @@ export function renderDashboard(container) {
     html += '</div></div>';
 
     html += '</div>'; // end grid
+
+    // --- Upgrade C: Mission Control • Your Next Move ---
+    const topSub = [...matrix].sort((a, b) => b.priorityScore - a.priorityScore)[0];
+    const topSubObj = topSub ? subjects.find(s => s.id === topSub.id) : null;
+    const topDays = topSubObj ? getDaysRemaining(topSubObj.examDate) : null;
+    let urgencyBadge = '';
+    if (topDays !== null) {
+      urgencyBadge = topDays <= 2
+        ? ' <span class="text-rose-600 dark:text-rose-400 font-extrabold animate-pulse">• Exam is in ' + topDays + ' days! 🔥</span>'
+        : ' <span class="text-amber-600 dark:text-amber-400 font-semibold">• Exam in ' + topDays + ' days ⏳</span>';
+    }
+
+    html += '<div class="bg-gradient-to-r from-indigo-500/10 via-violet-500/10 to-purple-500/10 border border-indigo-200/80 dark:border-indigo-800/80 rounded-2xl p-5 shadow-xs">';
+    html += '<div class="flex items-center justify-between gap-2 mb-2 flex-wrap">';
+    html += '<span class="px-3 py-1 rounded-full text-xs font-extrabold bg-indigo-600 text-white uppercase tracking-wider flex items-center gap-1.5 shadow-2xs"><span>🎯</span> Mission Control • Your Next Move</span>';
+    html += '<span class="text-xs text-indigo-600 dark:text-indigo-400 font-bold">Highest Return on Study Time</span>';
+    html += '</div>';
+
+    if (topSub) {
+      html += '<p class="text-slate-800 dark:text-slate-200 text-sm leading-relaxed">';
+      if (gap > 0) {
+        html += '⚡ Put your next study session into <strong class="text-indigo-600 dark:text-indigo-300 underline decoration-indigo-400 decoration-2 underline-offset-2">' + topSub.name + '</strong> (' + topSub.credits + ' Credits, ' + topSub.difficulty.toUpperCase() + ').' + urgencyBadge;
+        html += ' Mathematically, focusing on this subject delivers the greatest boost toward your <strong>' + targetSGPA.toFixed(2) + ' SGPA</strong> target.';
+      } else {
+        html += '🎉 <strong>Target exceeded!</strong> You are currently pacing ahead of your target. Keep maintaining steady review on <strong>' + topSub.name + '</strong>.' + urgencyBadge;
+      }
+      html += '</p>';
+    }
+    html += '</div>';
 
     // --- Section 3 & 5: Health + Opportunities ---
     html += '<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">';
@@ -174,13 +205,22 @@ export function renderDashboard(container) {
       const pScore = matrixEntry ? matrixEntry.priorityScore : 0;
       const pWidth = Math.min((pScore / 10) * 100, 100);
 
-      html += '<div class="p-4 border border-slate-200 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800 hover:shadow-md transition-shadow relative card-hover">';
+      const daysLeft = getDaysRemaining(sub.examDate);
+      let countdownPill = '';
+      if (daysLeft !== null) {
+        if (daysLeft <= 2) countdownPill = '<span class="px-2 py-0.5 text-[10px] font-bold rounded-md bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300 animate-pulse">🔥 In ' + daysLeft + 'd</span>';
+        else if (daysLeft <= 7) countdownPill = '<span class="px-2 py-0.5 text-[10px] font-bold rounded-md bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300">⏳ In ' + daysLeft + 'd</span>';
+        else countdownPill = '<span class="px-2 py-0.5 text-[10px] font-medium rounded-md bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300">🗓️ In ' + daysLeft + 'd</span>';
+      }
+
+      html += '<div class="p-4 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800 hover:shadow-md transition-shadow relative card-hover">';
       html += '<div class="absolute top-4 right-4 ' + r.tailwind + '">' + r.emoji + '</div>';
       html += '<h3 class="font-semibold text-slate-900 dark:text-slate-100 mb-2 pr-6 truncate" title="' + sub.name + '">' + sub.name + '</h3>';
-      html += '<div class="flex flex-wrap gap-2 mb-3">';
+      html += '<div class="flex flex-wrap gap-1.5 mb-3">';
       html += '<span class="px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-xs rounded font-medium">' + sub.credits + ' CR</span>';
       html += '<span class="px-2 py-0.5 bg-' + diff.color + '-100 dark:bg-' + diff.color + '-900/30 text-' + diff.color + '-700 dark:text-' + diff.color + '-300 text-xs rounded font-medium">' + diff.label + '</span>';
       html += '<span class="px-2 py-0.5 bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs rounded font-medium">Grade: ' + sub.expectedGrade + '</span>';
+      if (countdownPill) html += countdownPill;
       html += '</div>';
       html += '<div class="mt-2">';
       html += '<div class="flex justify-between text-xs text-slate-500 dark:text-slate-400 mb-1"><span>Priority Score</span><span>' + pScore.toFixed(2) + '</span></div>';
@@ -264,6 +304,10 @@ export function renderDashboard(container) {
     container.innerHTML = html;
 
     // Event Listeners
+    container.querySelector('#btn-export').addEventListener('click', () => {
+      renderExportModal(document.body);
+    });
+
     container.querySelector('#btn-edit').addEventListener('click', () => {
       setState({ view: 'wizard', wizardStep: 2 });
     });

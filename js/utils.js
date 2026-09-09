@@ -192,3 +192,25 @@ export function marksRequiredInEndTerm(currentTotalScored, currentMaxAttempted, 
   }
   return round(needed, 1);
 }
+
+/** Calculate days remaining until an exam date (YYYY-MM-DD) */
+export function getDaysRemaining(examDateStr) {
+  if (!examDateStr) return null;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const exam = new Date(examDateStr);
+  if (isNaN(exam.getTime())) return null;
+  exam.setHours(0, 0, 0, 0);
+  const diffTime = exam.getTime() - today.getTime();
+  return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+}
+
+/** Urgency Multiplier for Priority Score based on exam countdown */
+export function calculateUrgencyMultiplier(daysRemaining) {
+  if (daysRemaining === null || daysRemaining === undefined) return 1.0;
+  if (daysRemaining <= 0) return 2.2; // Today or tomorrow!
+  if (daysRemaining <= 3) return 2.0; // In 1-3 days
+  if (daysRemaining <= 7) return 1.5; // In 4-7 days
+  if (daysRemaining <= 14) return 1.2; // In 1-2 weeks
+  return 1.0;
+}

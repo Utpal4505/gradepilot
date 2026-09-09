@@ -107,6 +107,7 @@ export function createSubject(partial = {}) {
     useMarksCalc: partial.useMarksCalc || false,
     expectedGrade: partial.expectedGrade || 'A',
     simulatedGrade: partial.simulatedGrade || null,
+    examDate: partial.examDate || null,
   };
 }
 
